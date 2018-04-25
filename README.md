@@ -71,4 +71,4 @@ Andrew Jackson - jackson.aw[a]gmail.com
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
-[https://github.com/andrewwjackson/NodeJSMediaServer](https://github.com/andrewwjackson/)
+[https://github.com/andrewwjackson/](https://github.com/andrewwjackson/)
