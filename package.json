@@ -12,6 +12,7 @@
     "read-config": "^2.0.0",
     "request": "^2.85.0"
   },
+  "files" : ["mediaservice.js"],
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Should probably configure a test here..\" && exit 1"
