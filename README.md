@@ -19,7 +19,7 @@ cd NodeJSMediaServer
 npm install
 ```
 
-###./config/app.json
+### ./config/app.json
 ```javascript
 {
   server:{ //This is the hub or main server portion that you will direct requests to.
