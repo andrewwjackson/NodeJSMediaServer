@@ -1,0 +1,113 @@
+{
+  server:{
+    port:8087,
+    ip:'127.0.0.1',
+    customheaders:[
+      {'arrnode':'NodeJSMediaServer'},
+      {'X-Powered-By': 'Hopes and Dreams'}
+    ]
+  },
+  endpoints:[
+    {
+      port:9010,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'1'}
+      ]
+    },
+    {
+      port:9011,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'2'}
+      ]
+    },
+    {
+      port:9012,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'3'}
+      ]
+    },
+    {	
+      port:9013,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'4'}
+      ]
+    },
+    {
+      port:9014,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'5'}
+      ]
+    },
+    {
+      port:9015,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'6'}
+      ]
+    },
+    {
+      port:9016,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'7'}
+      ]
+    },
+    {
+      port:9017,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'8'}
+      ]
+    },
+    {	
+      port:9018,
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'9'}
+      ]
+    },
+    {
+      port:9019, 
+      ip:'127.0.0.1',
+      enabled: false,
+      maxmem: '256MB',
+      customheaders:[
+        {'endpoint':'10'}
+      ]
+    }
+  ],
+  sql:{
+    server: '<sql server path>',
+    database: '<sitecore database name>',
+    user: '<SQL user>',
+    password: '<SQL password>'
+  },
+  caching:{
+    maxage: 31536000,
+    cachability: 'public',
+    vary: 'Accept-Encoding'
+  }
+}
