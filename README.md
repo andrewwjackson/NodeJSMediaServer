@@ -55,7 +55,7 @@ npm install
 }
 ```
 
-Execute the included sql script on the database(s) you would like to serve from.
+Execute the included sql script [prereqsql.sql] on the database(s) you would like to serve from.
 
 Configure ARR to direct media requests to your media server.
 
