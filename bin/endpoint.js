@@ -49,6 +49,7 @@ function requestHandler(req, res){
   }
 
   var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
+  action = decodeURI(action);
   action = action.replace('/~/media','');
 
   if(action.indexOf('.') === -1){
