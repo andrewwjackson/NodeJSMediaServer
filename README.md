@@ -1,12 +1,12 @@
 # NodeJSMediaServer
-> A nodejs based media server for Sitecore WCMS.
+> A nodejs based media server for Sitecore CMS.
 
 
 This is a fairly simple nodejs / mssql solution to off-load requests for media library items without needing to run a separate instance of Sitecore. 
 
 ## Prerequisite
 
-1. An instance of Sitecore WCMS
+1. An instance of Sitecore CMS
 2. Access to the Sitecore database(s)
 3. NodeJS
 4. Your choice of application routing / proxy redirect  (I am using IIS ARR 3.0 and redirecting any requests that start with /~/media to my media server)
