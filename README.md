@@ -28,7 +28,12 @@ npm install
     customheaders:[
       {'arrnode':'NodeJSMediaServer'},
       {'X-Powered-By': 'Hopes and Dreams'}
-    ]
+    ],
+    enablelogging: true, 
+    logging: {
+      directory: './logs', //user or service account executing node must have permissions to this path.
+      file: 'mediaservice' //file prefix - a date stamp and the extension .log will be added to this
+    }
   },
   endpoints:[ // The main thread will spin these up (each creates a new nodejs process) at first run. You can configure as many endpoints as you like, I suggest starting at 5, keeping in mind that they do need resources to run.
     {
