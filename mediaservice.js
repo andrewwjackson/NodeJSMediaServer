@@ -1,5 +1,6 @@
-const s = require("./bin/sql.js");
+const s = require('./bin/sql.js');
 const http = require('http');
+const logger = require('./bin/logger.js');
 const request = require('request');
 const readConfig = require('read-config');
 const dateFormat = require('dateformat');
@@ -18,6 +19,11 @@ let cur = 0;
 if(config.endpoints.length < 1) {
   console.log('No endpoints configured! Stopping service.');
   process.exit(-1);
+}
+//init logger
+var thelogger;
+if(config.server.enablelogging){
+  thelogger = logger({});
 }
 
 //spawn endpoints
@@ -72,6 +78,7 @@ function endpointCheck() {
 }
 
 function requestHandler(req, res){
+  if(config.server.enablelogging===true && thelogger) thelogger(req, res, function(){var baz=0;});
   config.server.customheaders.forEach(function(obj){
     var keys = Object.keys(obj);
     keys.forEach(function(key){
