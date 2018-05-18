@@ -28,8 +28,8 @@ if(config.server.enablelogging){
 
 //spawn endpoints
 config.endpoints.forEach(function(endpoint){
-  var key = endpoint.ip.replace(/\./g, "") + endpoint.port.toString();  
-  var ep = fork('.\\bin\\endpoint.js',[('--ip='+endpoint.ip),('--port='+endpoint.port), ('--instance=' + key) ]);
+  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();  
+  var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+config.server.port), ('--instance=' + key) ]);
   ep.on('message', processMessage);
   endpoints[key] = endpoint;
   endpointkeys.push(key);

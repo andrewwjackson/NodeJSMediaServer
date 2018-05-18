@@ -15,7 +15,6 @@
   endpoints:[
     {
       port:9010,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -24,7 +23,6 @@
     },
     {
       port:9011,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -33,7 +31,6 @@
     },
     {
       port:9012,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -42,7 +39,6 @@
     },
     {	
       port:9013,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -51,7 +47,6 @@
     },
     {
       port:9014,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -60,7 +55,6 @@
     },
     {
       port:9015,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -69,7 +63,6 @@
     },
     {
       port:9016,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -78,7 +71,6 @@
     },
     {
       port:9017,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -87,7 +79,6 @@
     },
     {	
       port:9018,
-      ip:'127.0.0.1',
       enabled: false,
       maxmem: '256MB',
       customheaders:[
@@ -95,8 +86,7 @@
       ]
     },
     {
-      port:9019, 
-      ip:'127.0.0.1',
+      port:9019,
       enabled: false,
       maxmem: '256MB',
       customheaders:[

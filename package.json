@@ -19,6 +19,10 @@
   "files": [
     "mediaservice.js"
   ],
+  "repository": {
+    "type": "git",
+    "url": "nodejsmediaserver"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Should probably configure a test here..\" && exit 1"

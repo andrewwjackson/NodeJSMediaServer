@@ -38,7 +38,6 @@ npm install
   endpoints:[ // The main thread will spin these up (each creates a new nodejs process) at first run. You can configure as many endpoints as you like, I suggest starting at 5, keeping in mind that they do need resources to run.
     {
       port:9010, // This can be any available port.
-      ip:'127.0.0.1', // This can be any local ip, make sure your host(s) resolve to this ip locally.
       enabled: false, // This is an internal flag, we start at false and set to true when the endpoint starts.
       maxmem: '256MB', // This controls how much memory the process can use before it is recycled. Setting this too high or low will affect performance, you'll need to find your Goldilocks setting.
       customheaders:[

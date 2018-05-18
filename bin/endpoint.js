@@ -11,7 +11,7 @@ const config = readConfig('.\\config\\app.json');
 let endpointconfigs = [];
 
 config.endpoints.forEach(function(endpoint){
-  var key = endpoint.ip.replace(/\./g, "") + endpoint.port.toString();
+  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();
   endpointconfigs[key] = endpoint;
 });
 
