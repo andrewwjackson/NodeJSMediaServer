@@ -100,6 +100,9 @@
     user: '<SQL user>',
     password: '<SQL password>'
   },
+  filesys:{
+	rootpath: '<starting path for files to serve>'
+  },
   caching:{
     maxage: 31536000,
     cachability: 'public',
