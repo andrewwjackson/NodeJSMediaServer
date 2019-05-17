@@ -1,5 +1,3 @@
-/*jslint node: true */
-
 const s = require("./sql.js");
 const http = require('http');
 const readConfig = require('read-config');
@@ -29,9 +27,9 @@ if (argv.ip === undefined || argv.port === undefined || argv.instance === undefi
 
 const endpointid = argv.instance;
 const endpointconfig = endpointconfigs[endpointid];
+const maxmem = numeral(endpointconfig.maxmem)._value;
 
-
-function streamBuffer(res, buffer, contentType, modstring){
+function streamBuffer(res, req, buffer, contentType, modstring){
   if (buffer.length > 0) {    
     //normalize and convert date string
     modstring = modstring.toString().replace(/[\:\-]/, '');
@@ -66,7 +64,7 @@ function streamBuffer(res, buffer, contentType, modstring){
 
 function doGarbageCollection() {
   //GC: check memory usage and recycle if needed
-  if (process.memoryUsage().rss >= numeral(endpointconfig.maxmem)._value) {
+  if (process.memoryUsage().rss >= maxmem) {
     process.send(endpointid + ':recycle');
     process.exit();
   }
@@ -107,17 +105,38 @@ function requestHandler(req, res) {
     return res.end('Forbidden');
   }
 
+  
   var localpath = path.join(config.filesys.rootpath, action);
-  console.log("Looking for: " + localpath);
   fs.exists(localpath, function (exists) {
+    if(fs.statSync(localpath).size >= maxmem) {
+      doGarbageCollection();
+      process.send(endpointid + ':error');
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'text/plain');
+      console.log("Server Error: " + req.url);
+      return res.end('Internal Server Error');
+    }
     if (exists) {
-      let buffer = fs.readFileSync(localpath);
-      let modstring = fs.statSync(localpath).mtime;
-      let contentType = mime.contentType(localpath);
-      streamBuffer(res, buffer, contentType, modstring);
+      let buffer = new Buffer.from([]);
+      let modstring = '';
+      let contentType = '';
+      try {
+        buffer = fs.readFileSync(localpath);
+        modstring = fs.statSync(localpath).mtime;
+        contentType = mime.contentType(localpath);      
+      } catch {
+        doGarbageCollection();
+        process.send(endpointid + ':error');
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'text/plain');
+        console.log("Server Error: " + req.url);
+        return res.end('Internal Server Error');
+      }
+      streamBuffer(res, req, buffer, contentType, modstring);
       doGarbageCollection();
       return;
-    } else {
+    } else if (s.testConnection()) {
+      //todo: add size check
       s.getMediaByPath(action, function (recordsets, err, sql) {
         if (err || recordsets === undefined) {
           console.log(err);
@@ -128,20 +147,25 @@ function requestHandler(req, res) {
           console.log("Server Error: " + req.url);
           return res.end('Internal Server Error');
         }
-        let arr = [];
+        let buffer = new Buffer.from([]);
         let contentType = '';
         let modstring = '';
         recordsets.recordset.forEach(function (record) {
-          arr.push(record.Data);
+          let d = new Buffer.from(record.Data);
+          buffer = Buffer.concat([buffer,d]);
           contentType = mime.contentType(record.MimeType);
           modstring = record.Updated;
         });
         if (sql) sql.close();
-        let buffer = Buffer.concat(arr);
-        streamBuffer(res, buffer, contentType, modstring);
+        streamBuffer(res, req, buffer, contentType, modstring);
+        buffer = new Buffer.from([]);
         doGarbageCollection();
         return;
       });
+    } else {
+      streamBuffer(res, req, [], '', '');
+      doGarbageCollection();
+      return;
     }
   });
 }

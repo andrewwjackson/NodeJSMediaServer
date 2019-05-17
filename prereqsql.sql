@@ -29,6 +29,7 @@ BEGIN
 END
 GO
 
+--todo: add size check
 CREATE PROCEDURE [dbo].[SitecoreGetMediaByPath](
 	@testpath VARCHAR(4000)
 )

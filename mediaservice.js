@@ -21,10 +21,7 @@ if(config.endpoints.length < 1) {
   process.exit(-1);
 }
 //init logger
-var thelogger;
-if(config.server.enablelogging){
-  thelogger = logger({});
-}
+var thelogger = logger();
 
 //spawn endpoints
 config.endpoints.forEach(function(endpoint){
@@ -77,8 +74,7 @@ function endpointCheck() {
   return foo;
 }
 
-function requestHandler(req, res){
-  if(config.server.enablelogging===true && thelogger) thelogger(req, res, function(){var baz=0;});
+function handleRequest(req, res) {
   config.server.customheaders.forEach(function(obj){
     var keys = Object.keys(obj);
     keys.forEach(function(key){
@@ -144,4 +140,14 @@ function requestHandler(req, res){
 
   req.pipe(_req).pipe(res);
   cur = (cur + 1) % endpointkeys.length;
+}
+
+function requestHandler(req, res) {
+  if(config.server.loggingEnabled===true ) { 
+    thelogger(req, res, function() {
+      handleRequest(req, res);
+    });
+  } else {
+    handleRequest(req, res);
+  }  
 }

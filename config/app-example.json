@@ -10,7 +10,7 @@
                 "X-Powered-By": "Hopes and Dreams"
             }
         ],
-        "enabledlogging": true,
+        "loggingEnabled": true,
         "logging": {
             "directory": "./logs",
             "file": "mediaservice"

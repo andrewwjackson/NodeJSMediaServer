@@ -37,8 +37,7 @@ currentDate;
 module.exports = app;
 
 function app() {
-	validateOptions(options);
-
+	validateOptions(options);  
 	return function (req, res, callback) {		
 		mkdirp(options.directory, function(err){if(err){ console.error(err); throw err}});
 		currentDate = new Date();

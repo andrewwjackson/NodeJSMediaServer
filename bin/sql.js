@@ -16,7 +16,7 @@ exports.testGetMediaByPath = function(){
   getMediaByPath('/files/bigfile.rar', testcallback);
 }
 
-
+//todo: add size check
 function getMediaByPath(path, callback){  
   new sql.ConnectionPool(dbconfig).connect().then(pool => {     
     pool.request()
@@ -28,20 +28,22 @@ function getMediaByPath(path, callback){
 }
 
 function testConnection(){
-  sql.connect(dbconfig, function (err) {
-    if (err){ 
-        console.log(err);
-        return false;
-      }
-    var request = new sql.Request();
-    request.query('SELECT TOP 1 name FROM Items', function(err, recordset){
+  try {
+    sql.connect(dbconfig, function (err) {
       if (err){ 
-        console.log(err);
-        return false;
-      }
-      console.log(recordset.rowsAffected[0] > 0);
+          return false;
+        }
+      var request = new sql.Request();
+      request.query('SELECT TOP 1 name FROM Items', function(err, recordset){
+        if (err){ 
+          return false;
+        }
+        return (recordset.rowsAffected[0] > 0);
+      });
     });
-  });
+  } catch {
+    return false;
+  }
 }
 
 function testcallback(recordsets){  
