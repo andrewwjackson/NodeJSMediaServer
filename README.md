@@ -4,6 +4,13 @@
 
 This is a fairly simple nodejs / mssql solution to off-load requests for media library items without needing to run a separate instance of Sitecore. 
 
+## Update 2019-05-17:
+1. Fixed http logging
+2. Added ability to serve from file system
+3. Added some size checking to fix issue where file size can exceed alotted ep memory
+   * needs more work at this point to add size checking for db requests.
+
+
 ## Prerequisite
 
 1. An instance of Sitecore CMS
@@ -29,7 +36,7 @@ npm install
       {'arrnode':'NodeJSMediaServer'},
       {'X-Powered-By': 'Hopes and Dreams'}
     ],
-    enablelogging: true, 
+    loggingEnabled: true, 
     logging: {
       directory: './logs', //user or service account executing node must have permissions to this path.
       file: 'mediaservice' //file prefix - a date stamp and the extension .log will be added to this
