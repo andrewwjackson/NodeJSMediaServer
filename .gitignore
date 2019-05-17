@@ -61,4 +61,4 @@ typings/
 package-lock.json
 
 # active config file
-app.json
+*app.json
