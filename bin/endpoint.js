@@ -8,6 +8,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime-types');
+const qs = require('querystring');
 
 const config = readConfig('.\\config\\app.json');
 
@@ -56,7 +57,7 @@ function streamBuffer(res, req, buffer, contentType, modstring){
   } else {
     res.statusCode = 404;
     res.setHeader('Content-Type', 'text/plain');
-    console.log("Not Found: " + req.url);
+    console.log(`Not Found: ${req.url}\nBufferSize: ${buffer.length}`);
     res.end('Not Found');
     buffer = [];
   }
@@ -95,7 +96,12 @@ function requestHandler(req, res) {
 
   var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
   action = decodeURI(action);
-  action = action.replace('/~/media', '');
+  action = action.replace(/\/[\~\-]\/media\//, '');
+  query = qs.parse((req.url.indexOf('?') > -1  ? req.url.substr(req.url.indexOf('?')).length > 1 ? req.url.substr(req.url.indexOf('?') + 1) : '' : ''));
+  var dbconfig = ((query.db !== undefined) ? config.sql.conn[query.db] !== undefined ? config.sql.conn[query.db.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()]);
+  action = action.split('?')[0];
+  let guidtest = /^(\{*?[a-f0-9]{8}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{12}\}*?)\.*?/i;
+  let mediaid = guidtest.test(action) ? action.match(guidtest)[0] : '';
 
   if (action.indexOf('.') === -1) {
     process.send(endpointid + ':error');
@@ -104,19 +110,20 @@ function requestHandler(req, res) {
     console.log("Forbidden request: " + req.url);
     return res.end('Forbidden');
   }
-
   
   var localpath = path.join(config.filesys.rootpath, action);
-  fs.exists(localpath, function (exists) {
-    if(fs.statSync(localpath).size >= maxmem) {
-      doGarbageCollection();
-      process.send(endpointid + ':error');
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'text/plain');
-      console.log("Server Error: " + req.url);
-      return res.end('Internal Server Error');
-    }
-    if (exists) {
+  fs.exists(localpath, function (exists) {    
+    if (exists && mediaid.length === 0 && config.server.fsEnabled === true) {
+      console.log(`Found local file: ${localpath}`);
+      if(fs.statSync(localpath).size >= maxmem) {
+        console.log(`Local file too big: ${fs.statSync(localpath).size}`);
+        doGarbageCollection();
+        process.send(endpointid + ':error');
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'text/plain');
+        console.log("Server Error: " + req.url);
+        return res.end('Internal Server Error');
+      }
       let buffer = new Buffer.from([]);
       let modstring = '';
       let contentType = '';
@@ -124,7 +131,7 @@ function requestHandler(req, res) {
         buffer = fs.readFileSync(localpath);
         modstring = fs.statSync(localpath).mtime;
         contentType = mime.contentType(localpath);      
-      } catch {
+      } catch (err) {
         doGarbageCollection();
         process.send(endpointid + ':error');
         res.statusCode = 500;
@@ -135,9 +142,9 @@ function requestHandler(req, res) {
       streamBuffer(res, req, buffer, contentType, modstring);
       doGarbageCollection();
       return;
-    } else if (s.testConnection()) {
-      //todo: add size check
-      s.getMediaByPath(action, function (recordsets, err, sql) {
+    } else if (config.server.sqlEnabled === true ) {
+      console.log(`Looking for ${(mediaid.length > 0 ? mediaid : action)} in MediaLibrary`);
+      s.getMedia(action, maxmem, dbconfig, mediaid, function (recordsets, err, sql) {
         if (err || recordsets === undefined) {
           console.log(err);
           if (sql) sql.close();
@@ -146,23 +153,44 @@ function requestHandler(req, res) {
           res.setHeader('Content-Type', 'text/plain');
           console.log("Server Error: " + req.url);
           return res.end('Internal Server Error');
-        }
+        } 
         let buffer = new Buffer.from([]);
         let contentType = '';
         let modstring = '';
+        let blobsize = 0;
+        let nulldata = false;
         recordsets.recordset.forEach(function (record) {
-          let d = new Buffer.from(record.Data);
-          buffer = Buffer.concat([buffer,d]);
-          contentType = mime.contentType(record.MimeType);
-          modstring = record.Updated;
+          if(record.Data !== null) {
+            let d = new Buffer.from(record.Data);
+            console.log(`Read ${d.length} byte chunk from db`);
+            buffer = Buffer.concat([buffer,d]);
+            console.log(`Buffer length is now ${buffer.length} total bytes`);
+            contentType = mime.contentType(record.MimeType);
+            modstring = record.Updated;
+          } else {
+            nulldata = true;
+            blobsize = record.Size;
+          }
         });
         if (sql) sql.close();
-        streamBuffer(res, req, buffer, contentType, modstring);
-        buffer = new Buffer.from([]);
-        doGarbageCollection();
-        return;
+        if(nulldata === true) {
+          console.log(`DB Blob too big (db source uses 2x memsize): ${blobsize}`);
+          doGarbageCollection();
+          process.send(endpointid + ':error');
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'text/plain');
+          console.log("Server Error: " + req.url);
+          return res.end('Internal Server Error');
+        } else {
+          console.log(`Read ${buffer.length} total bytes from db`);
+          streamBuffer(res, req, buffer, contentType, modstring);
+          buffer = new Buffer.from([]);
+          doGarbageCollection();
+          return;
+        }
       });
     } else {
+      console.log('No data sources available');
       streamBuffer(res, req, [], '', '');
       doGarbageCollection();
       return;

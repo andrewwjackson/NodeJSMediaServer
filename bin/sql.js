@@ -2,26 +2,26 @@ const sql = require('mssql');
 const readConfig = require('read-config');
 
 var config = readConfig('.\\config\\app.json');
-var dbconfig = config.sql;
+var dbconfigDefault = config.sql.conn["web"];
 
 exports.testConnection = function(){
   testConnection();
 }
 
-exports.getMediaByPath = function(path, callback){
-  getMediaByPath(path, callback);
+exports.getMedia = function(path, maxmem, dbconfig, mediaid, callback){
+  getMedia(path, maxmem, dbconfig, mediaid, callback);
 }
 
 exports.testGetMediaByPath = function(){
   getMediaByPath('/files/bigfile.rar', testcallback);
 }
 
-//todo: add size check
-function getMediaByPath(path, callback){  
+function getMedia(path, maxmem, dbconfig, mediaid, callback){  
   new sql.ConnectionPool(dbconfig).connect().then(pool => {     
     pool.request()
-    .input('testpath', sql.VarChar(4000), path)
-    .execute('SitecoreGetMediaByPath').then(callback);    
+    .input('input', sql.VarChar((mediaid.length > 0 ? 38 : 4000)), (mediaid.length > 0 ? mediaid : path))
+    .input('maxsize', sql.Int, maxmem)
+    .execute((mediaid.length > 0 ? 'SitecoreGetMediaByID' : 'SitecoreGetMediaByPath')).then(callback);    
   }).catch(err => {    
     return callback(undefined, err, sql);
   });;
@@ -29,19 +29,22 @@ function getMediaByPath(path, callback){
 
 function testConnection(){
   try {
-    sql.connect(dbconfig, function (err) {
-      if (err){ 
-          return false;
-        }
+    sql.connect(dbconfigDefault, function (err) {
+      if (err){
+        console.log(err); 
+        return false;
+      }
       var request = new sql.Request();
       request.query('SELECT TOP 1 name FROM Items', function(err, recordset){
-        if (err){ 
+        if (err){
+          console.log(err); 
           return false;
         }
         return (recordset.rowsAffected[0] > 0);
       });
     });
-  } catch {
+  } catch (err) {
+    console.log(err);
     return false;
   }
 }

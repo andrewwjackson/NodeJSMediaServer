@@ -2,130 +2,127 @@
     "server": {
         "port": 8087,
         "ip": "127.0.0.1",
-        "customheaders": [
-            {
+        "customheaders": [{
                 "arrnode": "NodeJSMediaServer"
             },
             {
                 "X-Powered-By": "Hopes and Dreams"
             }
         ],
+        "sqlEnabled": true,
+        "fsEnabled": true,
         "loggingEnabled": true,
         "logging": {
             "directory": "./logs",
             "file": "mediaservice"
         }
     },
-    "endpoints": [
-        {
+    "endpoints": [{
             "port": 9010,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "1"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "1"
+            }]
         },
         {
             "port": 9011,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "2"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "2"
+            }]
         },
         {
             "port": 9012,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "3"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "3"
+            }]
         },
         {
             "port": 9013,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "4"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "4"
+            }]
         },
         {
             "port": 9014,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "5"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "5"
+            }]
         },
         {
             "port": 9015,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "6"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "6"
+            }]
         },
         {
             "port": 9016,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "7"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "7"
+            }]
         },
         {
             "port": 9017,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "8"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "8"
+            }]
         },
         {
             "port": 9018,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "9"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "9"
+            }]
         },
         {
             "port": 9019,
             "enabled": false,
             "maxmem": "256MB",
-            "customheaders": [
-                {
-                    "endpoint": "10"
-                }
-            ]
+            "customheaders": [{
+                "endpoint": "10"
+            }]
         }
     ],
     "sql": {
-        "server": "<sql server path>",
-        "database": "<sitecore database name>",
-        "user": "<SQL user>",
-        "password": "<SQL password>"
+        "default": "web",
+        "conn": {
+            "master": {
+                "server": "127.0.0.1",
+                "database": "Sitecore.Master",
+                "user": "dbuser",
+                "password": "dbpass"
+            },
+            "web": {
+                "server": "127.0.0.1",
+                "database": "Sitecore.Web",
+                "user": "dbuser",
+                "password": "dbpass"
+            },
+            "core": {
+                "server": "127.0.0.1",
+                "database": "Sitecore.Core",
+                "user": "dbuser",
+                "password": "dbpass"
+            }
+        }
     },
     "filesys": {
-        "rootpath": "<starting path for files to serve>"
+        "rootpath": "c:\\inetpub\\wwwroot\\mysite\\website\\fs"
     },
     "caching": {
         "maxage": 31536000,
