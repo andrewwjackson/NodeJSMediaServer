@@ -119,13 +119,13 @@
         }
     ],
     "sql": {
-        "server": "127.0.0.1",
-        "database": "nodb",
-        "user": "nouser",
-        "password": "nopass"
+        "server": "<sql server path>",
+        "database": "<sitecore database name>",
+        "user": "<SQL user>",
+        "password": "<SQL password>"
     },
     "filesys": {
-        "rootpath": "c:\\test\\files"
+        "rootpath": "<starting path for files to serve>"
     },
     "caching": {
         "maxage": 31536000,

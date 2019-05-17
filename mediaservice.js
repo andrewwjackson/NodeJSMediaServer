@@ -29,7 +29,7 @@ if(config.server.enablelogging){
 //spawn endpoints
 config.endpoints.forEach(function(endpoint){
   var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();  
-  var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+config.server.port), ('--instance=' + key) ]);
+  var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoint.port), ('--instance=' + key) ]);
   ep.on('message', processMessage);
   endpoints[key] = endpoint;
   endpointkeys.push(key);
@@ -45,11 +45,11 @@ function processMessage(msg){
     case 'ready':
       var pid = ((msgarr.length > 2) ? msgarr[2] : 0);
       endpoints[endpointid].enabled = true;
-      console.log("Spawned endpoint node @ PID: " + pid.toString() + " Host: " + endpoints[endpointid].ip + ":" + endpoints[endpointid].port);
+      console.log("Spawned endpoint node @ PID: " + pid.toString() + " Host: " + config.server.ip + ":" + endpoints[endpointid].port);
       break;
     case 'recycle':
       endpoints[endpointid].enabled = false;
-      var ep = fork('.\\bin\\endpoint.js',[('--ip='+endpoints[endpointid].ip),('--port='+endpoints[endpointid].port), ('--instance=' + endpointid) ]);
+      var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoints[endpointid].port), ('--instance=' + endpointid) ]);
       ep.on('message', processMessage);
       break;
     case 'error':
