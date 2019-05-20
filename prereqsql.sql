@@ -73,33 +73,58 @@ AS
 BEGIN
 	DECLARE @parent UNIQUEIDENTIFIER = '3D6658D8-A0BF-4E75-B3E2-D050FABCF4E1';
 	DECLARE @target UNIQUEIDENTIFIER;
-	DECLARE @tbl TABLE ([idx] int IDENTITY(0,1), [name] VARCHAR(4000), [id] UNIQUEIDENTIFIER);
-	DECLARE @ext VARCHAR(50);
+	DECLARE @tbl TABLE (idx int IDENTITY(0,1), name VARCHAR(4000), id UNIQUEIDENTIFIER);
+	DECLARE @ext VARCHAR(4000);
 	DECLARE @path VARCHAR(4000);
-	DECLARE @idx INT = 0;
+	DECLARE @idx int = 0;
 
 	DECLARE @extlen INT = CHARINDEX('.', REVERSE(@input));
 	SET @ext = SUBSTRING(@input, ((LEN(@input) - (@extlen - 2))), (@extlen));
 	SET @path = SUBSTRING(@input, 0, (LEN(@input) - (@extlen - 1)));
 
-	INSERT INTO @tbl ([name])
+	INSERT INTO @tbl (name)
 	SELECT DataItem FROM dbo.splitString(@path, '/');
 	
-	DECLARE @segcount INT = (SELECT COUNT(*) FROM @tbl);
+	DECLARE @segcount int = (SELECT COUNT(*) FROM @tbl);
 
 	WHILE (@idx < @segcount )
 	BEGIN
 		IF((@idx + 1) < @segcount)
 		BEGIN
-			SET @parent = (SELECT [ID] FROM Items WHERE [Name] = (SELECT [name] FROM @tbl WHERE [idx] = @idx) AND [ParentID] = @parent);
+			DECLARE @tmpparent UNIQUEIDENTIFIER = @parent;
+			SET @parent = (SELECT TOP 1 ID FROM Items WHERE Name = (SELECT name FROM @tbl WHERE idx = @idx) AND ParentID = @parent);
+			IF(@parent IS NULL)
+			BEGIN
+				SET @parent = (SELECT TOP 1 ID FROM Items WHERE Name = (SELECT REPLACE(name, '-', ' ') FROM @tbl WHERE idx = @idx) AND ParentID = @tmpparent);
+			END
+			IF(@parent IS NULL)
+			BEGIN				
+				SET @parent = (SELECT TOP 1 ID FROM Items WHERE Name = (SELECT REPLACE(name, ' ', '-') FROM @tbl WHERE idx = @idx) AND ParentID = @tmpparent);				
+			END
 		END
 		ELSE
 		BEGIN
 			SET @target = (	SELECT TOP 1 i.ID
 							FROM Items i
-							JOIN Fields f ON f.[ItemID] = i.[ID] AND f.[FIELDID] = 'C06867FE-9A43-4C7D-B739-48780492D06F' AND f.[Value] = @ext
-							WHERE i.[Name] = (SELECT [name] FROM @tbl WHERE [idx] = @idx)
-							AND i.[ParentId] = @parent);
+							JOIN Fields f on f.ItemId = i.ID AND f.FIELDID = 'C06867FE-9A43-4C7D-B739-48780492D06F' AND f.Value = @ext
+							WHERE i.Name = (SELECT name FROM @tbl WHERE idx = @idx)
+							AND i.ParentId = @parent);
+			IF(@target IS NULL)
+			BEGIN
+				SET @target = (	SELECT TOP 1 i.ID
+								FROM Items i
+								JOIN Fields f on f.ItemId = i.ID AND f.FIELDID = 'C06867FE-9A43-4C7D-B739-48780492D06F' AND f.Value = @ext
+								WHERE i.Name = (SELECT REPLACE(name, '-', ' ') FROM @tbl WHERE idx = @idx)
+								AND i.ParentId = @parent);
+			END
+			IF(@target IS NULL)
+			BEGIN
+				SET @target = (	SELECT TOP 1 i.ID
+								FROM Items i
+								JOIN Fields f on f.ItemId = i.ID AND f.FIELDID = 'C06867FE-9A43-4C7D-B739-48780492D06F' AND f.Value = @ext
+								WHERE i.Name = (SELECT REPLACE(name, ' ', '-') FROM @tbl WHERE idx = @idx)
+								AND i.ParentId = @parent);
+			END
 		END
 		SET @idx = @idx + 1;
 	END
@@ -116,7 +141,7 @@ BEGIN
 				ELSE Data 
 			END AS [Data]
 	FROM Blobs
-	WHERE [BlobId] = dbo.sitecore_fn_GetFieldValue(@target, 'blob')
+	WHERE BlobId = dbo.sitecore_fn_GetFieldValue(@target, 'blob')
 	ORDER BY [index] ASC;
 END
 GO
