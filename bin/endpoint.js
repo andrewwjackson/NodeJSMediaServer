@@ -82,6 +82,8 @@ function imageProcessing(res, req, buffer, contentType, modstring) {
     } else {
       streamBuffer(res, req, outputBuffer, contentType, modstring);
     }
+  } else {
+    streamBuffer(res, req, outputBuffer, contentType, modstring);
   }
 }
  
