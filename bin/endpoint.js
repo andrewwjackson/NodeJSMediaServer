@@ -34,59 +34,67 @@ const endpointconfig = endpointconfigs[endpointid];
 const maxmem = numeral(endpointconfig.maxmem)._value;
 
 function imageProcessing(res, req, buffer, contentType, modstring) {
-  var pathname = (url.parse(req.url, false).pathname);
-  var extension = pathname.substr(pathname.lastIndexOf('.'));
-  var query = url.parse(req.url, true).query;
-  var outputBuffer = buffer;
+  if (buffer.length > 0) {
+    var pathname = (url.parse(req.url, false).pathname);
+    var extension = pathname.substr(pathname.lastIndexOf('.'));
+    var query = url.parse(req.url, true).query;
+    var outputBuffer = buffer;
 
-  if (query.height || query.width || query.h || query.w || query.percent || query.pct || query.p || query.rotation || query.rot || query.r) {
+    if (query.height || query.width || query.h || query.w || query.percent || query.pct || query.p || query.rotation || query.rot || query.r) {
 
-    if ((([".png", ".jpg", ".jpeg", ".webp"]).includes(extension))) {
-      var original = imageSize(buffer);
-      var strHeight = query.height || query.h;
-      var strWidth = query.width || query.w;
-      var strPercent = query.percent || query.pct || query.p;
-      console.log(strPercent);
-      var strRotation = query.rotation || query.rot || query.r;
-      var height = Math.abs(isNaN(strHeight) ? original.height : strHeight);
-      var width = Math.abs(isNaN(strWidth) ? original.width : strWidth);
-      var percent = (isNaN(strPercent) ? 0 : (Math.abs(strPercent) / 100));
-      console.log(percent);
-      var rotation = Math.abs((isNaN(strRotation)) ? 0 : strRotation);
+      if ((([".png", ".jpg", ".jpeg", ".webp"]).includes(extension))) {
+        var original = imageSize(buffer);
+        var strHeight = query.height || query.h;
+        var strWidth = query.width || query.w;
+        var strPercent = query.percent || query.pct || query.p;
+        console.log(strPercent);
+        var strRotation = query.rotation || query.rot || query.r;
+        var height = Math.abs(isNaN(strHeight) ? original.height : strHeight);
+        var width = Math.abs(isNaN(strWidth) ? original.width : strWidth);
+        var percent = (isNaN(strPercent) ? 0 : (Math.abs(strPercent) / 100));
+        console.log(percent);
+        var rotation = Math.abs((isNaN(strRotation)) ? 0 : strRotation);
 
-      if (percent > 0) {
-        width = Math.abs(original.width * percent);
-        height = Math.abs(original.height * percent);
-        console.log(width, height);
-      } else if (height === original.height && width > 0) {
-        height = Math.abs((width / original.width) * original.height);
-      } else if (height > 0 && width === original.width) {
-        width = Math.abs((height / original.height) * original.width);
-      }
+        if (percent > 0) {
+          width = Math.abs(original.width * percent);
+          height = Math.abs(original.height * percent);
+          console.log(width, height);
+        } else if (height === original.height && width > 0) {
+          height = Math.abs((width / original.width) * original.height);
+        } else if (height > 0 && width === original.width) {
+          width = Math.abs((height / original.height) * original.width);
+        }
 
-      if (rotation > 0 && height === original.height && width === original.width) {
-        sharp(data).rotate(rotation).toBuffer().then(rotdata => {
-          streamBuffer(res, req, rotdata, contentType, modstring);
-        });
-      } else if ((height !== original.height || width !== original.width) && height > 0 && width > 0) {
-        sharp(buffer).resize(Math.round(width), Math.round(height)).toBuffer().then(data => {
-          if (rotation > 0) {
-            sharp(data).rotate(rotation).toBuffer().then(rotdata => {
-              streamBuffer(res, req, rotdata, contentType, modstring);
-            });
-          } else {
-            streamBuffer(res, req, data, contentType, modstring);
-          }
-        });
+        if (rotation > 0 && height === original.height && width === original.width) {
+          sharp(data).rotate(rotation).toBuffer().then(rotdata => {
+            streamBuffer(res, req, rotdata, contentType, modstring);
+          });
+        } else if ((height !== original.height || width !== original.width) && height > 0 && width > 0) {
+          sharp(buffer).resize(Math.round(width), Math.round(height)).toBuffer().then(data => {
+            if (rotation > 0) {
+              sharp(data).rotate(rotation).toBuffer().then(rotdata => {
+                streamBuffer(res, req, rotdata, contentType, modstring);
+              });
+            } else {
+              streamBuffer(res, req, data, contentType, modstring);
+            }
+          });
+        }
+      } else {
+        streamBuffer(res, req, outputBuffer, contentType, modstring);
       }
     } else {
       streamBuffer(res, req, outputBuffer, contentType, modstring);
     }
   } else {
-    streamBuffer(res, req, outputBuffer, contentType, modstring);
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'text/plain');
+    console.log(`Not Found: ${req.url}\nBufferSize: ${buffer.length}`);
+    res.end('Not Found');
+    buffer = [];
   }
 }
- 
+
 function streamBuffer(res, req, buffer, contentType, modstring) {
   if (buffer.length > 0) {
     //normalize and convert date string
