@@ -33,7 +33,7 @@ const endpointid = argv.instance;
 const endpointconfig = endpointconfigs[endpointid];
 const maxmem = numeral(endpointconfig.maxmem)._value;
 
-function imageProcessing(res, req, buffer, contentType, modstring) {
+function imageProcessing(res, req, buffer, contentType, modstring) { 
   if (buffer.length > 0) {
     var pathname = (url.parse(req.url, false).pathname);
     var extension = pathname.substr(pathname.lastIndexOf('.'));
@@ -47,12 +47,10 @@ function imageProcessing(res, req, buffer, contentType, modstring) {
         var strHeight = query.height || query.h;
         var strWidth = query.width || query.w;
         var strPercent = query.percent || query.pct || query.p;
-        console.log(strPercent);
         var strRotation = query.rotation || query.rot || query.r;
         var height = Math.abs(isNaN(strHeight) ? original.height : strHeight);
         var width = Math.abs(isNaN(strWidth) ? original.width : strWidth);
         var percent = (isNaN(strPercent) ? 0 : (Math.abs(strPercent) / 100));
-        console.log(percent);
         var rotation = Math.abs((isNaN(strRotation)) ? 0 : strRotation);
 
         if (percent > 0) {
@@ -66,31 +64,39 @@ function imageProcessing(res, req, buffer, contentType, modstring) {
         }
 
         if (rotation > 0 && height === original.height && width === original.width) {
-          sharp(data).rotate(rotation).toBuffer().then(rotdata => {
+          // rotation only request
+          sharp(buffer).rotate(rotation).toBuffer().then(rotdata => {
             streamBuffer(res, req, rotdata, contentType, modstring);
           });
         } else if ((height !== original.height || width !== original.width) && height > 0 && width > 0) {
           sharp(buffer).resize(Math.round(width), Math.round(height)).toBuffer().then(data => {
             if (rotation > 0) {
+              // rotation and resize
               sharp(data).rotate(rotation).toBuffer().then(rotdata => {
                 streamBuffer(res, req, rotdata, contentType, modstring);
               });
             } else {
+              // resize
               streamBuffer(res, req, data, contentType, modstring);
             }
           });
+        } else {
+          // nothing to do
+          streamBuffer(res, req, buffer, contentType, modstring);
         }
       } else {
+        console.log("not a qualifying file type...");
         streamBuffer(res, req, outputBuffer, contentType, modstring);
       }
     } else {
+      console.log("no processing requested...");
       streamBuffer(res, req, outputBuffer, contentType, modstring);
     }
   } else {
     res.statusCode = 404;
     res.setHeader('Content-Type', 'text/plain');
-    console.log(`Not Found: ${req.url}\nBufferSize: ${buffer.length}`);
     res.end('Not Found');
+    console.log(`Not Found: ${req.url}\nBufferSize: ${buffer.length}`);    
     buffer = [];
   }
 }
