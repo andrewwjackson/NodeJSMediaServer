@@ -2,7 +2,16 @@
 > A nodejs based media server for Sitecore CMS.
 
 
-This is a fairly simple nodejs / mssql solution to off-load requests for media library items without needing to run a separate instance of Sitecore. 
+This is a fairly simple nodejs / mssql solution to off-load requests for media library items without needing to run a separate instance of Sitecore.
+
+### Update 2019-08-13:
+1. Added basic image manipulation
+    * Resizing by height [querystring: h, height] and (or) width [querystring: w, width] 
+      or percent [querystring: p, pct, percent].
+    * Rotation [querystring: r, rot, rotation]
+    * EX: (50% size) ~/media/this/is/my/path/img.jpg?p=50
+    * EX: (150px width) ~/media/this/is/my/path/img.jpg?w=150
+    * EX: (Same rotated 90d) ~/media/this/is/my/path/img.jpg?w=150&rotation=90
 
 ### Update 2019-05-17:
 1. Fixed http logging
