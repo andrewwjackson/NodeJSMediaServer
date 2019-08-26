@@ -65,14 +65,14 @@ function imageProcessing(res, req, buffer, contentType, modstring) {
 
         if (rotation > 0 && height === original.height && width === original.width) {
           // rotation only request
-          sharp(buffer).rotate(rotation).toBuffer().then(rotdata => {
+          sharp(buffer).rotate(rotation, {background: {r: 255, g: 255, b: 255, alpha: 0.0}}).toBuffer().then(rotdata => {
             streamBuffer(res, req, rotdata, contentType, modstring);
           });
         } else if ((height !== original.height || width !== original.width) && height > 0 && width > 0) {
-          sharp(buffer).resize(Math.round(width), Math.round(height)).toBuffer().then(data => {
+          sharp(buffer).resize(Math.round(width), Math.round(height), {background: {r: 255, g:0, b: 0, alpha: 0.0}}).toBuffer().then(data => {
             if (rotation > 0) {
               // rotation and resize
-              sharp(data).rotate(rotation).toBuffer().then(rotdata => {
+              sharp(data).rotate(rotation, {background: {r: 255, g: 255, b: 255, alpha: 0.0}}).toBuffer().then(rotdata => {
                 streamBuffer(res, req, rotdata, contentType, modstring);
               });
             } else {
