@@ -1,99 +1,156 @@
-const s = require('./bin/sql.js');
-const http = require('http');
-const logger = require('./bin/logger.js');
-const request = require('request');
-const readConfig = require('read-config');
-const dateFormat = require('dateformat');
-const fork = require('child_process').fork;
+const s = require("./bin/sql.js");
+const http = require("http");
+const logger = require("./bin/logger.js");
+const request = require("request");
+const readConfig = require("read-config");
+const dateFormat = require("dateformat");
+const fork = require("child_process").fork;
 
-const config = readConfig('.\\config\\app.json');
+const config = readConfig(".\\config\\app.json");
 const startts = new Date();
 
 let endpointkeys = [];
 let endpoints = [];
+let processids = [];
 let reqcnt = 0;
 let errcnt = 0;
 let nfcnt = 0;
 let cur = 0;
 
-if(config.endpoints.length < 1) {
-  console.log('No endpoints configured! Stopping service.');
+if (config.endpoints.length < 1) {
+  console.log("No endpoints configured! Stopping service.");
   process.exit(-1);
 }
 //init logger
 var thelogger = logger();
 
 //spawn endpoints
-config.endpoints.forEach(function(endpoint){
-  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();  
-  var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoint.port), ('--instance=' + key) ]);
-  ep.on('message', processMessage);
+config.endpoints.forEach(function(endpoint) {
+  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();
+  var ep = fork(".\\bin\\endpoint.js", [
+    "--ip=" + config.server.ip,
+    "--port=" + endpoint.port,
+    "--instance=" + key
+  ]);
+  ep.on("message", processMessage);
+  ep.on("error", () => console.log("errored"));
   endpoints[key] = endpoint;
   endpointkeys.push(key);
 });
 
-function processMessage(msg){
+function processMessage(msg) {
   // message anatomy endpointid:[ready|recycle|error|notfound|critical]:args
   var msgarr = msg.split(":");
-  if(msgarr.length < 2) return; //could do some error logging here.
+  if (msgarr.length < 2) return; //could do some error logging here.
   var endpointid = msgarr[0];
   var message = msgarr[1].toLowerCase();
-  switch(message) {
-    case 'ready':
-      var pid = ((msgarr.length > 2) ? msgarr[2] : 0);
+  var pid = msgarr.length > 2 ? msgarr[2] : 0;
+  switch (message) {
+    case "ready":
       endpoints[endpointid].enabled = true;
-      console.log("Spawned endpoint node @ PID: " + pid.toString() + " Host: " + config.server.ip + ":" + endpoints[endpointid].port);
+      processids[endpoints[endpointid].port] = pid.toString();
+      console.log(
+        "Spawned endpoint node @ PID: " +
+          pid.toString() +
+          " Host: " +
+          config.server.ip +
+          ":" +
+          endpoints[endpointid].port
+      );
       break;
-    case 'recycle':
+    case "recycle":
+      if (
+        endpointCheck() <= endpointkeys.length - 1 ||
+        pid !== processids[endpoints[endpointid].port]
+      ) {
+        console.log("Not disabling endpoint " + endpointid);
+        break;
+      }
       endpoints[endpointid].enabled = false;
-      var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoints[endpointid].port), ('--instance=' + endpointid) ]);
-      ep.on('message', processMessage);
       break;
-    case 'error':
-      errcnt ++;
+    case "restart":
+      if (
+        endpoints[endpointid].enabled === true ||
+        endpoints[endpointid].restarting === true ||
+        pid !== processids[endpoints[endpointid].port]
+      ) {
+        console.log("Not Restarting Endpoint: " + endpointid);
+        break;
+      }
+      console.log("Restarting endpoint: " + endpointid);
+      endpoints[endpointid].restarting === true;
+      console.log("Killing Process: " + processids[endpoints[endpointid].port]);
+      try {
+        process.kill(processids[endpoints[endpointid].port]);
+      } catch (err) {
+        console.log("Error killing process: " + err);
+      }
+      var ep = fork(".\\bin\\endpoint.js", [
+        "--ip=" + config.server.ip,
+        "--port=" + endpoints[endpointid].port,
+        "--instance=" + endpointid
+      ]);
+      ep.on("message", processMessage);
+      ep.on("error", () => console.log("errored"));
       break;
-    case 'notfound':
-      nfcnt ++;
+    case "error":
+      errcnt++;
       break;
-    case 'critical':
+    case "notfound":
+      nfcnt++;
+      break;
+    case "critical":
       errcnt++;
       endpoints[endpointid].enabled = false;
       break;
     default:
-     return;
+      return;
   }
 }
 
-http.createServer(requestHandler).listen(config.server.port, config.server.ip);
+var server = http
+  .createServer(requestHandler)
+  .listen(config.server.port, config.server.ip);
+
+server.on("error", function(e) {
+  // Handle your error here
+  console.log(e);
+});
 
 function endpointCheck() {
   var foo = 0;
-  endpointkeys.forEach( function(k) {
-    if(endpoints[k].enabled === true) foo ++;
+  endpointkeys.forEach(function(k) {
+    if (endpoints[k].enabled === true) foo++;
   });
   return foo;
 }
 
 function handleRequest(req, res) {
-  config.server.customheaders.forEach(function(obj){
+  config.server.customheaders.forEach(function(obj) {
     var keys = Object.keys(obj);
-    keys.forEach(function(key){
+    keys.forEach(function(key) {
       res.setHeader(key, obj[key]);
     });
   });
 
-  if (req.method !== 'GET') {
+  if (req.method !== "GET") {
     res.statusCode = 501;
-    res.setHeader('Content-Type', 'text/plain');
-    return res.end('Method not implemented');
+    res.setHeader("Content-Type", "text/plain");
+    return res.end("Method not implemented");
   }
 
-  var host = ((req.headers.host.indexOf(':') === -1) ? req.headers.host : req.headers.host.substr(0, req.headers.host.indexOf(':')));
-  var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
-  action = action.replace('/~/media','');
+  var host =
+    req.headers.host.indexOf(":") === -1
+      ? req.headers.host
+      : req.headers.host.substr(0, req.headers.host.indexOf(":"));
+  var action =
+    req.url.indexOf("?") === -1
+      ? req.url
+      : req.url.substr(0, req.url.indexOf("?"));
+  action = action.replace("/~/media", "");
 
-  if(action.substr(1).toLowerCase() === '!status' ){
-    var n = Math.round(new Date()/1000);
+  if (action.substr(1).toLowerCase() === "!status") {
+    var n = Math.round(new Date() / 1000);
     var x = Math.round(startts / 1000);
     var ut = n - x;
     var stats = {
@@ -107,35 +164,36 @@ function handleRequest(req, res) {
     };
     var statsstring = JSON.stringify(stats);
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     return res.end(statsstring);
   }
 
-  reqcnt ++;
+  reqcnt++;
 
-  if(endpointCheck() === 0) {
+  if (endpointCheck() === 0) {
     res.statusCode = 500;
-    res.setHeader('Content-Type', 'text/plain');;
-    return res.end('Server Error: No endpoint available.');
+    res.setHeader("Content-Type", "text/plain");
+    return res.end("Server Error: No endpoint available.");
   }
 
-  if(action.indexOf('.') === -1){
+  if (action.indexOf(".") === -1) {
     res.statusCode = 403;
-    return res.end('Forbidden');
+    return res.end("Forbidden");
   }
 
   var epkey = endpointkeys[cur];
   var ep = endpoints[epkey];
 
-  if(!ep.enabled === true) {
+  if (!ep.enabled === true) {
     cur = (cur + 1) % endpointkeys.length;
-    return requestHandler(req,res);
+    return requestHandler(req, res);
   }
 
-  var furl = ("http://" + host + ":" + ep.port + req.url);
-  const _req = request({ url: furl}).on('error', error=> {
+  var furl = "http://" + host + ":" + ep.port + req.url;
+  const _req = request({ url: furl }).on("error", error => {
     res.statusCode = 500;
-    return res.end('Server Error');
+    console.log(error);
+    return res.end("Server Error");
   });
 
   req.pipe(_req).pipe(res);
@@ -143,11 +201,11 @@ function handleRequest(req, res) {
 }
 
 function requestHandler(req, res) {
-  if(config.server.loggingEnabled===true ) { 
+  if (config.server.loggingEnabled === true) {
     thelogger(req, res, function() {
       handleRequest(req, res);
     });
   } else {
     handleRequest(req, res);
-  }  
+  }
 }
