@@ -168,12 +168,13 @@ function requestHandler(req, res) {
 
   var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
   action = decodeURI(action);
-  action = action.replace(/\/[\~\-]\/media\//, '');
+  action = action.replace(/.*?\/[\~\-]\/media\//, '');
   query = qs.parse((req.url.indexOf('?') > -1 ? req.url.substr(req.url.indexOf('?')).length > 1 ? req.url.substr(req.url.indexOf('?') + 1) : '' : ''));
   var dbconfig = ((query.db !== undefined) ? config.sql.conn[query.db] !== undefined ? config.sql.conn[query.db.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()]);
-  action = action.split('?')[0];
+  action = action.split('?')[0];  
+  console.log(action);
   let guidtest = /^(\{*?[a-f0-9]{8}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{12}\}*?)\.*?/i;
-  let mediaid = guidtest.test(action) ? action.match(guidtest)[0] : '';
+  let mediaid = guidtest.test(action.split('.')[0]) ? action.split('.')[0].match(guidtest)[0] : '';
 
   if (action.indexOf('.') === -1) {
     process.send(endpointid + ':error');
