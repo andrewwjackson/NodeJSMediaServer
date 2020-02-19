@@ -114,16 +114,20 @@ function streamBuffer(res, req, buffer, contentType, modstring) {
     var moddate = Date.parse(modstring);
     // ************************************ //
 
+    // look for type specific cache rules
+    var cachesettings = config.caching[contentType.split(';')[0]];
+    if(cachesettings === undefined || cachesettings === null) cachesettings = config.caching.default;
+    
     var etag = crypto.createHash('md5').update(buffer.toString()).digest('hex');
     var nowutc = new Date().getTime();
-    var expires = nowutc + (1000 * config.caching.maxage);
+    var expires = nowutc + (1000 * cachesettings.maxage);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', buffer.length)
-    res.setHeader('Cache-Control', (config.caching.cachability + ", max-age=" + config.caching.maxage.toString()));
+    res.setHeader('Cache-Control', (cachesettings.cachability + ", max-age=" + cachesettings.maxage.toString()));
     res.setHeader('expires', (dateFormat(expires, "ddd, dd mmm yyyy HH:MM:ss") + " GMT"));
     res.setHeader('last-modified', (dateFormat(moddate, "ddd, dd mmm yyyy HH:MM:ss") + " GMT"));
     res.setHeader('etag', etag);
-    res.setHeader('Vary', config.caching.vary);
+    res.setHeader('Vary', cachesettings.vary);
     res.end(buffer);
     buffer = [];
   } else {
