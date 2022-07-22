@@ -10,6 +10,7 @@ This is a fairly simple nodejs / mssql solution to off-load media requests, orig
 3. Updated config template to include secure connection options for MSSQL
 4. Added image type conversion with quality option. 
     * Supported formats, recognised extensions and quality option support:
+      * EX: (75% quality) ~/media/this/is/my/path/img.jpg?q=75
 
         | Format  | Extension | Quality Option (1-100) [Default]  |
         | :---    |   :----:  |       :----:                      |
