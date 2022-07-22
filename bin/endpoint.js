@@ -1,24 +1,26 @@
-const argv = require('minimist')(process.argv.slice(2));
-const crypto = require('crypto');
-const dateFormat = require('dateformat');
-const fs = require('fs');
-const http = require('http');
-const imageSize = require('image-size');
-const mime = require('mime-types');
-const numeral = require('numeral');
-const path = require('path');
-const qs = require('querystring');
-const readConfig = require('read-config');
-const s = require("./sql.js");
-const sharp = require('sharp');
-const url = require('url');
+import minimist from 'minimist';
+const argv = minimist(process.argv.slice(2));
 
-const config = readConfig('.\\config\\app.json');
+import * as  crypto  from 'crypto';
+import dateFormat  from 'dateformat';
+import * as  fs  from 'fs';
+import * as  http  from 'http';
+import imageSize  from 'image-size';
+import * as  mime  from 'mime-types';
+import numeral from 'numeral';
+import * as  path  from 'path';
+import * as  qs  from 'querystring';
+import readConfig  from 'read-config-ng';
+import mediadb  from './sql.js';
+import sharp  from 'sharp';
+import * as  url  from 'url';
+
+const config = readConfig.sync('.\\config\\app.json');
 
 let endpointconfigs = [];
 
 config.endpoints.forEach(function (endpoint) {
-  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();
+  let key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();
   endpointconfigs[key] = endpoint;
 });
 
@@ -33,25 +35,60 @@ const endpointid = argv.instance;
 const endpointconfig = endpointconfigs[endpointid];
 const maxmem = numeral(endpointconfig.maxmem)._value;
 
-function imageProcessing(res, req, buffer, contentType, modstring) { 
+async function imageProcessing(res, req, buffer, contentType, modstring) { 
   if (buffer.length > 0) {
-    var pathname = (url.parse(req.url, false).pathname);
-    var extension = pathname.substr(pathname.lastIndexOf('.'));
-    var query = url.parse(req.url, true).query;
-    var outputBuffer = buffer;
+    let pathname = (url.parse(req.url, false).pathname);
+    let extension = pathname.substr(pathname.lastIndexOf('.'));
+    let query = url.parse(req.url, true).query;   
+    // image conversion and quality selection
+    let setQuality = !(isNaN((query.q || query.qual || query.quality || "NaN")));
+    let quality =  (setQuality ? Math.abs((query.q || query.qual || query.quality)) : 100);
+    let requestedType = mime.contentType(mime.lookup(extension));
+    if(contentType !== requestedType) {
+      switch(extension) {
+        case ".png":
+          buffer = await sharp(buffer).png({quality: (setQuality ? quality : 100)}).toBuffer();
+          contentType = requestedType;
+          break;
+        case ".jpg":
+        case ".jpeg":
+          buffer = await sharp(buffer).jpeg({quality:(setQuality ? quality : 80)}).toBuffer();
+          contentType = requestedType;
+          break;
+        case ".webp":
+          buffer = await sharp(buffer).webp({quality: (setQuality ? quality : 50)}).toBuffer();
+          contentType = requestedType;
+          break;
+        case ".gif":
+          buffer = await sharp(buffer).gif().toBuffer();
+          contentType = requestedType;
+          break;
+        case ".avif":
+          buffer = await sharp(buffer).avif({quality:(setQuality ? quality : 80)}).toBuffer();
+          contentType = requestedType;
+          break;
+        case ".tiff":
+          buffer = await sharp(buffer).tiff({quality:(setQuality ? quality : 80)}).toBuffer();
+          contentType = requestedType;
+          break;          
+        default:
+          break;
+      }
+    }
+    let outputBuffer = buffer;
 
     if (query.height || query.width || query.h || query.w || query.percent || query.pct || query.p || query.rotation || query.rot || query.r) {
 
-      if ((([".png", ".jpg", ".jpeg", ".webp"]).includes(extension))) {
-        var original = imageSize(buffer);
-        var strHeight = query.height || query.h;
-        var strWidth = query.width || query.w;
-        var strPercent = query.percent || query.pct || query.p;
-        var strRotation = query.rotation || query.rot || query.r;
-        var height = Math.abs(isNaN(strHeight) ? original.height : strHeight);
-        var width = Math.abs(isNaN(strWidth) ? original.width : strWidth);
-        var percent = (isNaN(strPercent) ? 0 : (Math.abs(strPercent) / 100));
-        var rotation = Math.abs((isNaN(strRotation)) ? 0 : strRotation);
+      if ((([".png", ".jpg", ".jpeg", ".webp", ".gif", ".tiff"]).includes(extension))) {
+        let original = imageSize(buffer);
+        let strHeight = query.height || query.h;
+        let strWidth = query.width || query.w;
+        let strPercent = query.percent || query.pct || query.p;
+        let strRotation = query.rotation || query.rot || query.r;
+        let height = Math.abs(isNaN(strHeight) ? original.height : strHeight);
+        let width = Math.abs(isNaN(strWidth) ? original.width : strWidth);
+        let percent = (isNaN(strPercent) ? 0 : (Math.abs(strPercent) / 100));
+        let rotation = Math.abs((isNaN(strRotation)) ? 0 : strRotation);
 
         if (percent > 0) {
           width = Math.abs(original.width * percent);
@@ -105,22 +142,22 @@ function streamBuffer(res, req, buffer, contentType, modstring) {
   if (buffer.length > 0) {
     //normalize and convert date string
     modstring = modstring.toString().replace(/[\:\-]/, '');
-    var modarr = modstring.split('');
+    let modarr = modstring.split('');
     modarr.splice(4, 0, '-');
     modarr.splice(7, 0, '-');
     modarr.splice(13, 0, ':');
     modarr.splice(16, 0, ':');
     modstring = modarr.join('');
-    var moddate = Date.parse(modstring);
+    let moddate = Date.parse(modstring);
     // ************************************ //
 
     // look for type specific cache rules
-    var cachesettings = config.caching[contentType.split(';')[0]];
+    let cachesettings = config.caching[contentType.split(';')[0]];
     if(cachesettings === undefined || cachesettings === null) cachesettings = config.caching.default;
     
-    var etag = crypto.createHash('md5').update(buffer.toString()).digest('hex');
-    var nowutc = new Date().getTime();
-    var expires = nowutc + (1000 * cachesettings.maxage);
+    let etag = crypto.createHash('md5').update(buffer.toString()).digest('hex');
+    let nowutc = new Date().getTime();
+    let expires = nowutc + (1000 * cachesettings.maxage);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', buffer.length)
     res.setHeader('Cache-Control', (cachesettings.cachability + ", max-age=" + cachesettings.maxage.toString()));
@@ -147,15 +184,16 @@ function doGarbageCollection() {
   }
 }
 
-http.createServer(requestHandler).listen(argv.port, argv.ip);
-
-process.send(endpointid + ':ready:' + process.pid);
+const endPoint = http.createServer(requestHandler).listen(argv.port, argv.ip, () => {
+  console.log((endPoint.listening ? "Endpoint Listening" : "Endpoint Error"));
+  process.send(endpointid + ':ready:' + process.pid);
+});
 
 function requestHandler(req, res) {
   if (endpointconfig) {
     if (endpointconfig.customheaders) {
       endpointconfig.customheaders.forEach(function (obj) {
-        var keys = Object.keys(obj);
+        let keys = Object.keys(obj);
         keys.forEach(function (key) {
           res.setHeader(key, obj[key]);
         });
@@ -170,11 +208,11 @@ function requestHandler(req, res) {
     return res.end('Method not implemented');
   }
 
-  var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
+  let action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
   action = decodeURI(action);
   action = action.replace(/.*?\/[\~\-]\/media\//, '');
-  query = qs.parse((req.url.indexOf('?') > -1 ? req.url.substr(req.url.indexOf('?')).length > 1 ? req.url.substr(req.url.indexOf('?') + 1) : '' : ''));
-  var dbconfig = ((query.db !== undefined) ? config.sql.conn[query.db] !== undefined ? config.sql.conn[query.db.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()]);
+  let query = qs.parse((req.url.indexOf('?') > -1 ? req.url.substr(req.url.indexOf('?')).length > 1 ? req.url.substr(req.url.indexOf('?') + 1) : '' : ''));
+  let dbconfig = ((query.db !== undefined) ? config.sql.conn[query.db] !== undefined ? config.sql.conn[query.db.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()]);
   action = action.split('?')[0];  
   console.log(action);
   let guidtest = /^(\{*?[a-f0-9]{8}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{4}\-*?[a-f0-9]{12}\}*?)\.*?/i;
@@ -188,7 +226,7 @@ function requestHandler(req, res) {
     return res.end('Forbidden');
   }
 
-  var localpath = path.join(config.filesys.rootpath, action);
+  let localpath = path.join(config.filesys.rootpath, action);
   fs.exists(localpath, function (exists) {
     if (exists && mediaid.length === 0 && config.server.fsEnabled === true) {
       console.log(`Found local file: ${localpath}`);
@@ -220,6 +258,7 @@ function requestHandler(req, res) {
       doGarbageCollection();
       return;
     } else if (config.server.sqlEnabled === true) {
+      const s = new mediadb(dbconfig);
       console.log(`Looking for ${(mediaid.length > 0 ? mediaid : action)} in MediaLibrary`);
       s.getMedia(action, maxmem, dbconfig, mediaid, function (recordsets, err, sql) {
         if (err || recordsets === undefined) {

@@ -23,18 +23,18 @@
   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-const onHeaders = require('on-headers');
-const onFinished = require('on-finished');
-const readConfig = require('read-config');
-const fs = require('fs');
-const path = require('path');
-const mkdirp = require('mkdirp');
-const config = readConfig('.\\config\\app.json');
-var options = config.server.logging,
+import onHeaders from 'on-headers';
+import onFinished from 'on-finished';
+import readConfig from 'read-config-ng';
+import { appendFile } from 'fs';
+import { join } from 'path';
+import mkdirp from 'mkdirp';
+const config = readConfig.sync('.\\config\\app.json');
+let options = config.server.logging,
 logformat, todayDate = String(),
 currentDate;
 
-module.exports = app;
+export default app;
 
 function app() {
 	validateOptions(options);  
@@ -53,7 +53,7 @@ function app() {
 			logformat = logformat.replace(':statusCode', res.statusCode);
 			logformat = logformat.replace(':date', formatDate(new Date()));
 			logformat = logformat.replace(':response-time', responseTime(res));
-			fs.appendFile(path.join(options.directory, options.file), logformat, 'utf8', function (err) {
+			appendFile(join(options.directory, options.file), logformat, 'utf8', function (err) {
 				if (err) { console.log(err); throw err; }
 			});
 		}
@@ -77,7 +77,7 @@ function validateOptions(opt) {
   }
 
   //format file name
-  var d = new Date();
+  let d = new Date();
   todayDate = todayDate.concat(d.getFullYear(), pad((d.getMonth() + 1), 1) , pad(d.getDate(), 1) );
   if (options.file.indexOf('.log') === -1) {
       options.file = String().concat(options.file, '_', todayDate, '.log');
@@ -97,12 +97,12 @@ function isValidFileName(str) {
 }
 
 function formatDate(d) {
-  var date = d.getDate();
-  var hour = d.getUTCHours();
-  var mins = d.getUTCMinutes();
-  var secs = d.getUTCSeconds();
-  var year = d.getUTCFullYear();
-  var month = d.getUTCMonth();
+  let date = d.getDate();
+  let hour = d.getUTCHours();
+  let mins = d.getUTCMinutes();
+  let secs = d.getUTCSeconds();
+  let year = d.getUTCFullYear();
+  let month = d.getUTCMonth();
   return year + '-' + pad((month + 1), 1) + '-' + pad(date, 1) + 'T' + pad(hour, 1) + ':' + pad(mins, 1) + ':' + pad(secs, 1) + '+0000';
 }
 
@@ -114,26 +114,26 @@ function responseTime(res) {
 }
 
 function getUrl(req) {
-  var format= req.url || req.originalUrl;
+  let format= req.url || req.originalUrl;
   if(format.indexOf('?') > -1) format = format.split('?')[0];
   return format;
 }
 
 function getQs(req) {
-  var format= req.url || req.originalUrl;
+  let format= req.url || req.originalUrl;
   if(format.indexOf('?') === -1) return '-';
   return format.split('?')[1];
 }
 
 function getHost(req) {
-  var host = req.headers.host;
+  let host = req.headers.host;
   if (host.indexOf(':') === -1)
     return host;
   return host.split(':')[0];
 }
 
 function getXff(req) {
-  var xff = req.headers['x-forwarded-for'] || '-';
+  let xff = req.headers['x-forwarded-for'] || '-';
   if (xff.indexOf(':') === -1)
     return xff;
   newarr = [];
@@ -144,7 +144,7 @@ function getXff(req) {
 }
 
 function getPort(req) {
-  var host = req.headers.host;
+  let host = req.headers.host;
   if (host.indexOf(':') === -1)
     return '-';
   return host.split(':')[1];
@@ -155,8 +155,8 @@ function pad(num, step) {
   if (num.length !== 1) {
     return num;
   }
-  var zeroes = '';
-  for (var i = step - 1; i >= 0; i--) {
+  let zeroes = '';
+  for (let i = step - 1; i >= 0; i--) {
     zeroes = zeroes + '0';
   }
   return zeroes + num;
