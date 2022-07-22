@@ -105,19 +105,37 @@
                 "server": "127.0.0.1",
                 "database": "Sitecore.Master",
                 "user": "dbuser",
-                "password": "dbpass"
+                "password": "dbpass",
+                "options": {
+                    "trustedConnection": true,
+                    "encrypt": true,
+                    "enableArithAbort": true,
+                    "trustServerCertificate": true
+                }
             },
             "web": {
                 "server": "127.0.0.1",
                 "database": "Sitecore.Web",
                 "user": "dbuser",
-                "password": "dbpass"
+                "password": "dbpass",
+                "options": {
+                    "trustedConnection": true,
+                    "encrypt": true,
+                    "enableArithAbort": true,
+                    "trustServerCertificate": true
+                }
             },
             "core": {
                 "server": "127.0.0.1",
                 "database": "Sitecore.Core",
                 "user": "dbuser",
-                "password": "dbpass"
+                "password": "dbpass",
+                "options": {
+                    "trustedConnection": true,
+                    "encrypt": true,
+                    "enableArithAbort": true,
+                    "trustServerCertificate": true
+                }
             }
         }
     },

@@ -1,12 +1,11 @@
-const s = require('./bin/sql.js');
-const http = require('http');
-const logger = require('./bin/logger.js');
-const request = require('request');
-const readConfig = require('read-config');
-const dateFormat = require('dateformat');
-const fork = require('child_process').fork;
+import * as http from 'http';
+import * as logger from './bin/logger.js';
+import got from 'got';
+import readConfig from 'read-config-ng';
+import * as child_process from 'child_process';
+const fork = child_process.fork;
 
-const config = readConfig('.\\config\\app.json');
+const config = readConfig.sync('.\\config\\app.json');
 const startts = new Date();
 
 let endpointkeys = [];
@@ -21,12 +20,12 @@ if(config.endpoints.length < 1) {
   process.exit(-1);
 }
 //init logger
-var thelogger = logger();
+let thelogger = logger.default;
 
 //spawn endpoints
 config.endpoints.forEach(function(endpoint){
-  var key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();  
-  var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoint.port), ('--instance=' + key) ]);
+  let key = config.server.ip.replace(/\./g, "") + endpoint.port.toString();  
+  let ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoint.port), ('--instance=' + key) ]);
   ep.on('message', processMessage);
   endpoints[key] = endpoint;
   endpointkeys.push(key);
@@ -34,19 +33,19 @@ config.endpoints.forEach(function(endpoint){
 
 function processMessage(msg){
   // message anatomy endpointid:[ready|recycle|error|notfound|critical]:args
-  var msgarr = msg.split(":");
+  let msgarr = msg.split(":");
   if(msgarr.length < 2) return; //could do some error logging here.
-  var endpointid = msgarr[0];
-  var message = msgarr[1].toLowerCase();
+  let endpointid = msgarr[0];
+  let message = msgarr[1].toLowerCase();
   switch(message) {
     case 'ready':
-      var pid = ((msgarr.length > 2) ? msgarr[2] : 0);
+      let pid = ((msgarr.length > 2) ? msgarr[2] : 0);
       endpoints[endpointid].enabled = true;
       console.log("Spawned endpoint node @ PID: " + pid.toString() + " Host: " + config.server.ip + ":" + endpoints[endpointid].port);
       break;
     case 'recycle':
       endpoints[endpointid].enabled = false;
-      var ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoints[endpointid].port), ('--instance=' + endpointid) ]);
+      let ep = fork('.\\bin\\endpoint.js',[('--ip='+config.server.ip),('--port='+endpoints[endpointid].port), ('--instance=' + endpointid) ]);
       ep.on('message', processMessage);
       break;
     case 'error':
@@ -64,10 +63,13 @@ function processMessage(msg){
   }
 }
 
-http.createServer(requestHandler).listen(config.server.port, config.server.ip);
+const server = http.createServer(requestHandler).listen(config.server.port, config.server.ip, ()=>{
+  console.log((server.listening ? "listening" : "error!"));
+});
+
 
 function endpointCheck() {
-  var foo = 0;
+  let foo = 0;
   endpointkeys.forEach( function(k) {
     if(endpoints[k].enabled === true) foo ++;
   });
@@ -75,8 +77,9 @@ function endpointCheck() {
 }
 
 function handleRequest(req, res) {
+  console.log('Recieved request');
   config.server.customheaders.forEach(function(obj){
-    var keys = Object.keys(obj);
+    let keys = Object.keys(obj);
     keys.forEach(function(key){
       res.setHeader(key, obj[key]);
     });
@@ -88,15 +91,15 @@ function handleRequest(req, res) {
     return res.end('Method not implemented');
   }
 
-  var host = ((req.headers.host.indexOf(':') === -1) ? req.headers.host : req.headers.host.substr(0, req.headers.host.indexOf(':')));
-  var action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
+  let host = ((req.headers.host.indexOf(':') === -1) ? req.headers.host : req.headers.host.substr(0, req.headers.host.indexOf(':')));
+  let action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
   action = action.replace('/~/media','');
 
   if(action.substr(1).toLowerCase() === '!status' ){
-    var n = Math.round(new Date()/1000);
-    var x = Math.round(startts / 1000);
-    var ut = n - x;
-    var stats = {
+    let n = Math.round(new Date()/1000);
+    let x = Math.round(startts / 1000);
+    let ut = n - x;
+    let stats = {
       lastrestart: new Date(startts).toGMTString(),
       uptime: ut,
       epcount: config.endpoints.length,
@@ -105,7 +108,7 @@ function handleRequest(req, res) {
       errcount: errcnt,
       nfcount: nfcnt
     };
-    var statsstring = JSON.stringify(stats);
+    let statsstring = JSON.stringify(stats);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     return res.end(statsstring);
@@ -124,22 +127,32 @@ function handleRequest(req, res) {
     return res.end('Forbidden');
   }
 
-  var epkey = endpointkeys[cur];
-  var ep = endpoints[epkey];
+  let epkey = endpointkeys[cur];
+  let ep = endpoints[epkey];
 
   if(!ep.enabled === true) {
     cur = (cur + 1) % endpointkeys.length;
     return requestHandler(req,res);
   }
 
-  var furl = ("http://" + host + ":" + ep.port + req.url);
-  const _req = request({ url: furl}).on('error', error=> {
+  let furl = ("http://" + host + ":" + ep.port + req.url);
+  (async () => {      
+  })();
+  
+  got(furl).then(_req => {
+    Object.getOwnPropertyNames(_req.headers).forEach((prop) => {
+      let headerval = _req.headers[prop];
+      if(headerval!== undefined && headerval !== null){
+        res.setHeader(prop, headerval);
+      }      
+    });
+    
+    res.end(_req.rawBody);
+    cur = (cur + 1) % endpointkeys.length;
+  }).catch( error => {
     res.statusCode = 500;
     return res.end('Server Error');
   });
-
-  req.pipe(_req).pipe(res);
-  cur = (cur + 1) % endpointkeys.length;
 }
 
 function requestHandler(req, res) {

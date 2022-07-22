@@ -1,8 +1,24 @@
 # NodeJSMediaServer
-> A nodejs based media server for Sitecore CMS.
+> A nodejs based media server (Tailored for Sitecore CMS).
 
 
-This is a fairly simple nodejs / mssql solution to off-load requests for media library items without needing to run a separate instance of Sitecore.
+This is a fairly simple nodejs / mssql solution to off-load media requests, originally designed to aviod the need to run a separate instance of Sitecore.
+
+### Update 2022-07-22:
+1. Replaced [Request](https://github.com/request/request) with [Got](https://github.com/sindresorhus/got)
+2. Housekeeping
+3. Updated config template to include secure connection options for MSSQL
+4. Added image type conversion with quality option. 
+    * Supported formats, recognised extensions and quality option support:
+
+        | Format  | Extension | Quality Option (1-100) [Default]  |
+        | :---    |   :----:  |       :----:                      |
+        | JPEG  |   jpg, jpeg | ✔️ [80] |
+        | PNG   |   png       | ✔️ [100] |
+        | GIF   |   gif       | ❌ |
+        | TIFF  |   tiff      | ✔️ [80] |
+        | WEBP  |   webp      | ✔️ [50] |
+        | AVIF  |   avif      | ✔️ [50] |
 
 ### Update 2019-08-13:
 1. Added basic image manipulation
@@ -12,6 +28,15 @@ This is a fairly simple nodejs / mssql solution to off-load requests for media l
     * EX: (50% size) ~/media/this/is/my/path/img.jpg?p=50
     * EX: (150px width) ~/media/this/is/my/path/img.jpg?w=150
     * EX: (Same rotated 90d) ~/media/this/is/my/path/img.jpg?w=150&rotation=90
+    * Supported formats and recognised extensions:
+
+      | Format  | Extension |
+      | :---    |   :----:  |
+      | JPEG  |   jpg, jpeg |
+      | PNG   |   png       |
+      | GIF   |   gif       |
+      | TIFF  |   tiff      |
+      | WEBP  |   webp      |
 
 ### Update 2019-05-17:
 1. Fixed http logging
@@ -27,10 +52,10 @@ This is a fairly simple nodejs / mssql solution to off-load requests for media l
 
 ### Prerequisite
 
-1. An instance of Sitecore CMS
+1. An instance of Sitecore CMS, BYOSP (Write a stored procedure for your own db that matches the output of the one provided), or a bunch of files you'd like to serve in a folder that is accessible to this app.
 2. Access to the Sitecore database(s)
-3. NodeJS
-4. Your choice of application routing / proxy redirect  (I am using IIS ARR 3.0 and redirecting any requests that start with /~/media to my media server)
+3. NodeJS >= 13.latest
+4. Your choice of application routing / proxy redirect  (ex: I am using IIS ARR 3.0 and redirecting any requests that start with /~/media to my media server)
 
 ### Installation and Configuration
 
@@ -76,19 +101,37 @@ npm install
         "server": "127.0.0.1",
         "database": "sitecore_master",
         "user": "sqluser",
-        "password": "sqlpass"
+        "password": "sqlpass",
+        "options": {
+            "trustedConnection": true,
+            "encrypt": true,
+            "enableArithAbort": true,
+            "trustServerCertificate": true
+        }
       },
       "web": {
         "server": "127.0.0.1",
         "database": "sitecore_web",
         "user": "sqluser",
-        "password": "sqlpass"
+        "password": "sqlpass",
+        "options": {
+            "trustedConnection": true,
+            "encrypt": true,
+            "enableArithAbort": true,
+            "trustServerCertificate": true
+        }
       },
       "core": {
         "server": "127.0.0.1",
         "database": "sitecore_core",
         "user": "sqluser",
-        "password": "sqlpass"
+        "password": "sqlpass",
+        "options": {
+            "trustedConnection": true,
+            "encrypt": true,
+            "enableArithAbort": true,
+            "trustServerCertificate": true
+        }
       }
     }
   },

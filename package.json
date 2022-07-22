@@ -1,24 +1,26 @@
 {
   "name": "NodeJSMediaServer",
+  "type": "module",
   "version": "1.0.0",
   "description": "A nodejs based media server for Sitecore WCMS.",
   "main": "mediaservice.js",
   "dependencies": {
-    "dateformat": "^3.0.3",
-    "eslint": "^5.16.0",
-    "image-size": "^0.7.4",
-    "mime-types": "^2.1.24",
-    "mkdirp": "^0.5.1",
-    "mssql": "^4.1.0",
-    "nodemon": "^1.17.3",
-    "npm": "^6.14.6",
-    "numeral": "^2.0.6",
-    "on-finished": "^2.3.0",
-    "on-headers": "^1.0.1",
-    "read-config": "^2.0.0",
-    "request": "^2.85.0",
-    "sharp": "^0.23.0",
-    "tedious": "2.2.4"
+    "dateformat": "latest",
+    "eslint": "latest",
+    "got": "^12.1.0",
+    "image-size": "latest",
+    "mime-types": "latest",
+    "mkdirp": "latest",
+    "mssql": "latest",
+    "nodemon": "latest",
+    "npm": "latest",
+    "numeral": "latest",
+    "on-finished": "latest",
+    "on-headers": "latest",
+    "read-config-ng": "^3.0.5",
+    "request": "latest",
+    "sharp": "latest",
+    "tedious": "latest"
   },
   "files": [
     "mediaservice.js"
@@ -27,7 +29,6 @@
     "type": "git",
     "url": "nodejsmediaserver"
   },
-  "devDependencies": {},
   "scripts": {
     "postinstall": "If Not Exist config\\app.json ( copy config\\app.example.json config\\app.json )"
   },
