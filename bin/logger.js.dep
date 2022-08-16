@@ -1,0 +1,163 @@
+/*
+  This is a derivative of http-logger {https://www.npmjs.com/package/http-logger}
+  
+  Copyright (c) 2016 Hashir Zakir Hussain <hashir.hussain111@gmail.com>
+  
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  'Software'), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+import onHeaders from 'on-headers';
+import onFinished from 'on-finished';
+import readConfig from 'read-config-ng';
+import { appendFile } from 'fs';
+import { join } from 'path';
+import mkdirp from 'mkdirp';
+const config = readConfig.sync('./config/app.json');
+let options = config.server.logging,
+logformat, todayDate = String(),
+currentDate;
+
+export default app;
+
+function app() {
+	validateOptions(options);  
+	return function (req, res, callback) {		
+		mkdirp(options.directory, function(err){if(err){ console.error(err); throw err}});
+		currentDate = new Date();
+		function logRequest() {
+			logformat = ':date :host :port :url :qs :method :ip :xff :statusCode :response-time\n';
+			logformat = logformat.replace(':method', req.method);
+			logformat = logformat.replace(':host', getHost(req));
+			logformat = logformat.replace(':port', getPort(req));
+			logformat = logformat.replace(':ip', req.connection.remoteAddress);
+			logformat = logformat.replace(':xff', getXff(req));
+			logformat = logformat.replace(':url', getUrl(req));
+      logformat = logformat.replace(':qs', getQs(req));
+			logformat = logformat.replace(':statusCode', res.statusCode);
+			logformat = logformat.replace(':date', formatDate(new Date()));
+			logformat = logformat.replace(':response-time', responseTime(res));
+			appendFile(join(options.directory, options.file), logformat, 'utf8', function (err) {
+				if (err && config.server.logToConsole) { console.log(err); throw err; }
+			});
+		}
+		onHeaders(res, logTime);
+		onFinished(res, logRequest);
+		callback();
+	}
+}
+
+function validateOptions(opt) {
+	if (opt) {
+    if (opt.hasOwnProperty(' file ')) {
+        if ((opt.file.length < 1 || typeof opt.file !== ' string ')) {
+            throw new TypeError(' file value must be a valid string ');
+        }
+        if (!isValidFileName(opt.file)) {
+            throw new TypeError(' only underscore is allowed in file name ');
+        }
+        options.file = opt.file || options.file;
+    }
+  }
+
+  //format file name
+  let d = new Date();
+  todayDate = todayDate.concat(d.getFullYear(), pad((d.getMonth() + 1), 1) , pad(d.getDate(), 1) );
+  if (options.file.indexOf('.log') === -1) {
+      options.file = String().concat(options.file, '_', todayDate, '.log');
+  } else {
+      options.file = String().concat(options.file, '_', todayDate);
+  }
+
+  return options;
+}
+
+function logTime() {
+  if (typeof this.setHeader === 'function') return this.setHeader('X-Response-Time', new Date - currentDate + 'ms');
+}
+
+function isValidFileName(str) {
+  return !/[~`!#$%\^&*+=\-\[\]\\'; , /{}|\s\\":<>\?]/g.test(str);
+}
+
+function formatDate(d) {
+  let date = d.getDate();
+  let hour = d.getUTCHours();
+  let mins = d.getUTCMinutes();
+  let secs = d.getUTCSeconds();
+  let year = d.getUTCFullYear();
+  let month = d.getUTCMonth();
+  return year + '-' + pad((month + 1), 1) + '-' + pad(date, 1) + 'T' + pad(hour, 1) + ':' + pad(mins, 1) + ':' + pad(secs, 1) + '+0000';
+}
+
+function responseTime(res) {
+  if (typeof res.getHeader === 'function') {
+    return res.getHeader('X-Response-Time');
+  }
+  return undefined;
+}
+
+function getUrl(req) {
+  let format= req.url || req.originalUrl;
+  if(format.indexOf('?') > -1) format = format.split('?')[0];
+  return format;
+}
+
+function getQs(req) {
+  let format= req.url || req.originalUrl;
+  if(format.indexOf('?') === -1) return '-';
+  return format.split('?')[1];
+}
+
+function getHost(req) {
+  let host = req.headers.host;
+  if (host.indexOf(':') === -1)
+    return host;
+  return host.split(':')[0];
+}
+
+function getXff(req) {
+  let xff = req.headers['x-forwarded-for'] || '-';
+  if (xff.indexOf(':') === -1)
+    return xff;
+  newarr = [];
+  arr = xff.split(',').forEach(function (x) {
+      newarr.push(x.split(':')[0]);
+    });
+  return newarr.join(", ");
+}
+
+function getPort(req) {
+  let host = req.headers.host;
+  if (host.indexOf(':') === -1)
+    return '-';
+  return host.split(':')[1];
+}
+
+function pad(num, step) {
+  num = String(num);
+  if (num.length !== 1) {
+    return num;
+  }
+  let zeroes = '';
+  for (let i = step - 1; i >= 0; i--) {
+    zeroes = zeroes + '0';
+  }
+  return zeroes + num;
+}
