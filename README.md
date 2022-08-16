@@ -2,7 +2,11 @@
 > A nodejs based media server (Tailored for Sitecore CMS).
 
 
-This is a fairly simple nodejs / mssql solution to off-load media requests, originally designed to aviod the need to run a separate instance of Sitecore.
+This is a fairly simple nodejs / mssql solution to off-load media requests, originally designed to avoid the need to run a separate instance of Sitecore.
+
+### Update 2022-07-26:
+1. Removed multiple endpoint support - memory and process issues
+  * Use PM2 or something similar
 
 ### Update 2022-07-22:
 1. Replaced [Request](https://github.com/request/request) with [Got](https://github.com/sindresorhus/got)
@@ -10,7 +14,6 @@ This is a fairly simple nodejs / mssql solution to off-load media requests, orig
 3. Updated config template to include secure connection options for MSSQL
 4. Added image type conversion with quality option. 
     * Supported formats, recognised extensions and quality option support:
-      * EX: (75% quality) ~/media/this/is/my/path/img.jpg?q=75
 
         | Format  | Extension | Quality Option (1-100) [Default]  |
         | :---    |   :----:  |       :----:                      |
@@ -85,16 +88,6 @@ npm install
       "file": 'mediaservice' //file prefix - a date stamp and the extension .log will be added to this
     }
   },
-  "endpoints":[ // The main thread will spin these up (each creates a new nodejs process) at first run. You can configure as many endpoints as you like, I suggest starting at 5, keeping in mind that they do need resources to run.
-    {
-      "port": 9010, // This can be any available port.
-      "enabled": false, // This is an internal flag, we start at false and set to true when the endpoint starts.
-      "maxmem": "256MB", // This controls how much memory the process can use before it is recycled. Setting this too high or low will affect performance, you'll need to find your Goldilocks setting.
-      "customheaders":[
-        {"endpoint":"1"}
-      ]
-    }
-  ],
   "sql":{
     "default": "web", // This is the database requests will default to if no db querystring is present or the requested db is not configured
     "conn": { // By default, 3 database connections will appear, you can add or remove them as needed.
