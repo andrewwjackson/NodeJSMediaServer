@@ -1,10 +1,11 @@
+import * as crypto from 'crypto';
 import * as  fs from 'fs';
 import * as  mime from 'mime-types';
 import * as  path from 'path';
-import * as  qs from 'querystring';
+import * as url from 'url';
 import numeral from 'numeral';
-import readConfig from 'read-config-ng';
-import mediadb from './sql.js';
+import readConfig, { async } from 'read-config-ng';
+import {mediadb} from './sql.js';
 import image from './image.js';
 
 const i = new image();
@@ -23,7 +24,7 @@ let request = class {
     let action = ((req.url.indexOf('?') === -1) ? req.url : req.url.substr(0, req.url.indexOf('?')));
     action = decodeURI(action);
     action = action.replace(/.*?\/[\~\-]\/media\//, '');
-    let query = qs.parse((req.url.indexOf('?') > -1 ? req.url.substr(req.url.indexOf('?')).length > 1 ? req.url.substr(req.url.indexOf('?') + 1) : '' : ''));
+    let query = url.parse(req.url, true).query;
     let dbconfig = ((query.db !== undefined) ? config.sql.conn[query.db] !== undefined ? config.sql.conn[query.db.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()] : config.sql.conn[config.sql.default.toLowerCase()]);
     action = action.split('?')[0];
     if (config.server.logToConsole) console.log(action);

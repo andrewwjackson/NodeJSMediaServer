@@ -1,8 +1,10 @@
 import * as http from 'http';
 import request from './bin/request.js';
+import pixelrequest from './bin/pixelrequest.js';
 import readConfig from 'read-config-ng';
 
 const r = new request();
+const pr = new pixelrequest();
 const config = readConfig.sync('config/app.json');
 const startts = new Date();
 
@@ -54,6 +56,11 @@ function requestHandler(req, res) {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     return res.end(statsstring);
+  }
+
+  if (action.substr(1).toLowerCase() === 'pixel.png') {
+    pr.requestHandler(req, res);
+    return true;
   }
 
   reqcnt++;

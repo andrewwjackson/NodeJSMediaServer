@@ -5,7 +5,7 @@ import readConfig from 'read-config-ng';
 const config = readConfig.sync('config/app.json');
 
 let stream = class {
-  streamBuffer(res, req, buffer, contentType, modstring) {
+  streamBuffer(res, req, buffer, contentType, modstring, nocache = false) {
     if (buffer.length > 0) {
       //normalize and convert date string
       modstring = modstring.toString().replace(/[\:\-]/, '');
@@ -18,9 +18,17 @@ let stream = class {
       let moddate = Date.parse(modstring);
       // ************************************ //
 
-      // look for type specific cache rules
-      let cachesettings = config.caching[contentType.split(';')[0]];
-      if (cachesettings === undefined || cachesettings === null) cachesettings = config.caching.default;
+      let cachesettings = config.caching.default;
+
+      if(nocache === true) {
+        cachesettings.maxage = 0;
+        cachesettings.cachability = 'private, no-cache, no-store';
+        moddate = new Date().getTime();
+      } else {
+        // look for type specific cache rules
+        cachesettings = config.caching[contentType.split(';')[0]];
+        if (cachesettings === undefined || cachesettings === null) cachesettings = config.caching.default;
+      }
 
       let etag = crypto.createHash('md5').update(buffer.toString()).digest('hex');
       let nowutc = new Date().getTime();

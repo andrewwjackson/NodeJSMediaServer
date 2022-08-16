@@ -11,7 +11,9 @@
         ],
         "sqlEnabled": true,
         "fsEnabled": true,
-        "logToConsole": false
+        "logToConsole": false,
+        "defaultPixelCookie": "pixel_cookie",
+        "pixelCookieDomain": "mydomain.com"
     },
     "sql": {
         "default": "web",
@@ -43,6 +45,18 @@
             "core": {
                 "server": "127.0.0.1",
                 "database": "Sitecore.Core",
+                "user": "dbuser",
+                "password": "dbpass",
+                "options": {
+                    "trustedConnection": true,
+                    "encrypt": true,
+                    "enableArithAbort": true,
+                    "trustServerCertificate": true
+                }
+            },
+            "track": {
+                "server": "127.0.0.1",
+                "database": "PixelTrackDB",
                 "user": "dbuser",
                 "password": "dbpass",
                 "options": {

@@ -2,6 +2,7 @@ import imageSize from 'image-size';
 import * as  mime from 'mime-types';
 import readConfig from 'read-config-ng';
 import sharp from 'sharp';
+import jimp from 'jimp';
 import * as  url from 'url';
 import stream from './stream.js'
 
@@ -111,6 +112,15 @@ let image = class {
       if (config.server.logToConsole) console.log(`Not Found: ${req.url}\nBufferSize: ${buffer.length}`);
       buffer = [];
     }
+  }
+
+  async pixel(res, req){
+    new jimp(1,1, (err, image) => {
+      image.opacity = 0;
+      image.getBuffer(jimp.MIME_PNG, (err, buffer) => {
+        st.streamBuffer(res, req, buffer, jimp.MIME_PNG, '', true);
+      });      
+    });
   }
 }
 

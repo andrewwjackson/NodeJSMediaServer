@@ -9,6 +9,7 @@
     "eslint": "latest",
     "got": "^12.1.0",
     "image-size": "latest",
+    "jimp": "^0.16.1",
     "mime-types": "latest",
     "mkdirp": "latest",
     "mssql": "latest",
