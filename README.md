@@ -92,11 +92,9 @@ npm install
     ],
     "sqlEnabled": true, // This is true by default - Set to false to disable DB Media Library
     "fsEnabled": true, // This is true by default - Set to false to disable FS 
-    "loggingEnabled": true, 
-    "logging": {
-      "directory": './logs', //user or service account executing node must have permissions to this path.
-      "file": 'mediaservice' //file prefix - a date stamp and the extension .log will be added to this
-    }
+    "logToConsole": false, // False by default, this will enable console logging
+    "defaultPixelCookie": "pixel_cookie", // default cookie name for the tracking pixel
+    "pixelCookieDomain": "mydomain.com" // domain override for the tracking pixel cookie
   },
   "sql":{
     "default": "web", // This is the database requests will default to if no db querystring is present or the requested db is not configured
@@ -135,6 +133,18 @@ npm install
             "encrypt": true,
             "enableArithAbort": true,
             "trustServerCertificate": true
+        }
+      },
+      "track": {  // tracking db connection
+        "server": "127.0.0.1",
+        "database": "PixelTrackDB",
+        "user": "dbuser",
+        "password": "dbpass",
+        "options": {
+          "trustedConnection": true,
+          "encrypt": true,
+          "enableArithAbort": true,
+          "trustServerCertificate": true
         }
       }
     }
