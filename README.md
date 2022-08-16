@@ -4,9 +4,19 @@
 
 This is a fairly simple nodejs / mssql solution to off-load media requests, originally designed to avoid the need to run a separate instance of Sitecore.
 
+### Update 2022-08-16:
+1. Added tracking pixel generator
+    * Usage: https://my.domain.com/~/media/pixel.png?tp=mycustompx
+      * Querystring tp sets the cookie name
+      * When testing direct links, add the querystring debug=1
+      * Config options:
+        * server -> "defaultPixelCookie" is the default cookie name. This will be used if no cookie name is supplied by the tp querystring.
+        * server -> "pixelCookieDomain" allows overriding the cookie domain (as much as a browser will allow it..)
+2. Added nocache option to the streambuffer method
+
 ### Update 2022-07-26:
 1. Removed multiple endpoint support - memory and process issues
-  * Use PM2 or something similar
+    * Use PM2 or something similar
 
 ### Update 2022-07-22:
 1. Replaced [Request](https://github.com/request/request) with [Got](https://github.com/sindresorhus/got)
