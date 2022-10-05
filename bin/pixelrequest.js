@@ -11,8 +11,8 @@ let pixelrequest = class {
 
   requestHandler(req, res) {
     
-    let query = url.parse(req.url, true).query;
-    let referer = req.headers?.referer;
+    let query = (url.parse(req.url, true).query || {});
+    let referer = (req.headers?.referer || query.ref);
     if(referer === undefined && query.debug === undefined) {
       res.statusCode = 403;
       res.setHeader('Content-Type', 'text/plain');
